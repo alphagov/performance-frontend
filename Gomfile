@@ -1,0 +1,12 @@
+gom 'github.com/Sirupsen/logrus'
+gom 'github.com/alext/tablecloth'
+gom 'github.com/cenkalti/backoff'
+gom 'github.com/codegangsta/inject'
+gom 'github.com/go-martini/martini'
+gom 'github.com/google/go-querystring/query'
+gom 'gopkg.in/unrolled/render.v1'
+
+group :test do
+  gom 'github.com/onsi/ginkgo'
+  gom 'github.com/onsi/gomega'
+end
