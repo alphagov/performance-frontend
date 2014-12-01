@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/Sirupsen/logrus"
 )
@@ -47,13 +48,15 @@ type DataSource struct {
 }
 
 type QueryParams struct {
-	FilterBy []string `json:"filter_by,omitempty"`
-	GroupBy  string   `json:"group_by,omitempty"`
-	Collect  []string `json:"collect,omitempty"`
-	SortBy   string   `json:"sort_by,omitempty"`
-	Duration int      `json:"duration,omitempty"`
-	Period   string   `json:"period,omitempty"`
-	Limit    int      `json:"limit,omitempty"`
+	FilterBy []string  `json:"filter_by,omitempty" url:"filter_by,omitempty"`
+	GroupBy  string    `json:"group_by,omitempty" url:"group_by,omitempty"`
+	Collect  []string  `json:"collect,omitempty" url:"collect,omitempty"`
+	SortBy   string    `json:"sort_by,omitempty" url:"sort_by,omitempty"`
+	Duration int       `json:"duration,omitempty" url:"duration,omitempty"`
+	Period   string    `json:"period,omitempty" url:"period,omitempty"`
+	Limit    int       `json:"limit,omitempty" url:"limit,omitempty"`
+	StartAt  time.Time `json:"start_at,omitempty" url:"start_at,omitempty"`
+	EndAt    time.Time `json:"end_at,omitempty" url:"end_at,omitempty"`
 }
 
 // Client defines the interface that we need to talk to the meta data API
