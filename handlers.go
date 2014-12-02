@@ -83,18 +83,9 @@ func fetchModules(dashboard Dashboard, log *logrus.Logger) chan DataResponse {
 	fetchDataSource := func(dataSource DataSource) DataResponse {
 		start := time.Now()
 		queryParams := dataSource.QueryParams
-		query := Query{
-			FilterBy: queryParams.FilterBy,
-			Collect:  queryParams.Collect,
-			Duration: queryParams.Duration,
-			Period:   queryParams.Period,
-			SortBy:   queryParams.SortBy,
-			GroupBy:  queryParams.GroupBy,
-			Limit:    queryParams.Limit,
-		}
-		br, err := DataAPIClient.Fetch(dataSource.DataGroup, dataSource.DataType, query)
+		br, err := DataAPIClient.Fetch(dataSource.DataGroup, dataSource.DataType, queryParams)
 		log.WithFields(logrus.Fields{
-			"url":      DataAPIClient.BuildURL(dataSource.DataGroup, dataSource.DataType, query),
+			"url":      DataAPIClient.BuildURL(dataSource.DataGroup, dataSource.DataType, queryParams),
 			"duration": time.Since(start).Seconds(),
 		}).Debug("Got response")
 		return DataResponse{br, err}

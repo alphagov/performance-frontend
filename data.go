@@ -4,26 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/google/go-querystring/query"
 )
-
-type Query struct {
-	FilterBy []string `url:"filter_by,omitempty"`
-	GroupBy  string   `url:"group_by,omitempty"`
-	Collect  []string `url:"collect,omitempty"`
-	SortBy   string   `url:"sort_by,omitempty"`
-
-	Duration int    `url:"duration,omitempty"`
-	Period   string `url:"period,omitempty"`
-
-	Limit int `url:"limit,omitempty"`
-
-	StartAt time.Time `url:"start_at,omitempty"`
-	EndAt   time.Time `url:"end_at,omitempty"`
-}
 
 type DataClient struct {
 	URL string
@@ -45,7 +29,7 @@ type BackdropResponse struct {
 	Message string          `json:"message,omitempty"`
 }
 
-func (client *DataClient) BuildURL(dataGroup, dataType string, dataQuery Query) string {
+func (client *DataClient) BuildURL(dataGroup, dataType string, dataQuery QueryParams) string {
 	url := fmt.Sprintf("%s/data/%s/%s", client.URL, dataGroup, dataType)
 
 	values, _ := query.Values(dataQuery)
@@ -58,7 +42,7 @@ func (client *DataClient) BuildURL(dataGroup, dataType string, dataQuery Query) 
 	return url
 }
 
-func (client *DataClient) Fetch(dataGroup, dataType string, dataQuery Query) (*BackdropResponse, error) {
+func (client *DataClient) Fetch(dataGroup, dataType string, dataQuery QueryParams) (*BackdropResponse, error) {
 	url := client.BuildURL(dataGroup, dataType, dataQuery)
 
 	client.log.WithFields(logrus.Fields{

@@ -75,13 +75,13 @@ var _ = Describe("Data", func() {
 		Describe("BuildURL", func() {
 			It("Should return a url with no parameters", func() {
 				client := NewDataClient("http://perf", nil)
-				Expect(client.BuildURL("govuk-info", "page-statistics", Query{})).
+				Expect(client.BuildURL("govuk-info", "page-statistics", QueryParams{})).
 					To(Equal("http://perf/data/govuk-info/page-statistics"))
 			})
 
 			It("Should add filter by parameters", func() {
 				client := NewDataClient("http://perf", nil)
-				Expect(client.BuildURL("govuk-info", "page-statistics", Query{
+				Expect(client.BuildURL("govuk-info", "page-statistics", QueryParams{
 					FilterBy: []string{"pagePath:/bank-holidays", "bar:foo"},
 				})).To(Equal("http://perf/data/govuk-info/page-statistics?filter_by=pagePath%3A%2Fbank-holidays&filter_by=bar%3Afoo"))
 			})
@@ -106,7 +106,7 @@ var _ = Describe("Data", func() {
 }`),
 					),
 				)
-				response, err := client.Fetch("govuk-info", "page-statistics", Query{})
+				response, err := client.Fetch("govuk-info", "page-statistics", QueryParams{})
 				Expect(err).To(BeNil())
 				Expect(response).ToNot(BeNil())
 
