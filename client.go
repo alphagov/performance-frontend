@@ -59,9 +59,9 @@ type QueryParams struct {
 	EndAt    time.Time `json:"end_at,omitempty" url:"end_at,omitempty"`
 }
 
-// Client defines the interface that we need to talk to the meta data API
-type Client interface {
-	Fetch(path string) (Dashboard, error)
+// MetaClient defines the interface that we need to talk to the meta data API
+type MetaClient interface {
+	Fetch(slug string) (Dashboard, error)
 	FetchDashboards() (Dashboards, error)
 }
 
@@ -70,8 +70,8 @@ type defaultClient struct {
 	log     *logrus.Logger
 }
 
-// NewMetaClient returns a new Client implementation with sensible defaults.
-func NewMetaClient(baseURL string, log *logrus.Logger) Client {
+// NewMetaClient returns a new MetaClient implementation with sensible defaults.
+func NewMetaClient(baseURL string, log *logrus.Logger) MetaClient {
 	return &defaultClient{baseURL, log}
 }
 

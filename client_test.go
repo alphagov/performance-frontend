@@ -10,9 +10,9 @@ import (
 	"github.com/onsi/gomega/ghttp"
 )
 
-var _ = Describe("Client", func() {
+var _ = Describe("MetaClient", func() {
 	var server *ghttp.Server
-	var client Client
+	var client MetaClient
 
 	BeforeEach(func() {
 		server = ghttp.NewServer()

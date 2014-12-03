@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	ConfigAPIClient Client
+	ConfigAPIClient MetaClient
 	DataAPIClient   *DataClient
 )
 
