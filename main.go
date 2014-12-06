@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/Sirupsen/logrus"
 	"github.com/alext/tablecloth"
+	"github.com/alphagov/performanceplatform-client.go"
 	"net/http"
 	"os"
 	"runtime"
@@ -10,8 +11,8 @@ import (
 )
 
 var (
-	ConfigAPIClient MetaClient
-	DataAPIClient   *DataClient
+	ConfigAPIClient performanceclient.MetaClient
+	DataAPIClient   performanceclient.DataClient
 )
 
 func main() {
@@ -42,8 +43,8 @@ func main() {
 	// handlers.ConfigAPIClient = config.NewClient(configAPIURL, bearerToken)
 	// handlers.DataSetStorage = handlers.NewMongoStorage(mongoURL, databaseName)
 	// handlers.StatsdClient = handlers.NewStatsDClient("localhost:8125", "datastore.")
-	ConfigAPIClient = NewMetaClient(configAPIURL, logger)
-	DataAPIClient = NewDataClient(dataAPIURL, logger)
+	ConfigAPIClient = performanceclient.NewMetaClient(configAPIURL, logger)
+	DataAPIClient = performanceclient.NewDataClient(dataAPIURL, logger)
 
 	go serve(":"+port, NewHandler(logger), wg, logger)
 	wg.Wait()

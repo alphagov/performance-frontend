@@ -1,4 +1,5 @@
 gom 'github.com/Sirupsen/logrus'
+gom 'github.com/alphagov/performanceplatform-client.go'
 gom 'github.com/alext/tablecloth'
 gom 'github.com/cenkalti/backoff'
 gom 'github.com/codegangsta/inject'

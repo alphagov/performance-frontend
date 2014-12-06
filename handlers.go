@@ -3,6 +3,7 @@ package main
 import (
 	// "fmt"
 	"github.com/Sirupsen/logrus"
+	"github.com/alphagov/performanceplatform-client.go"
 	"github.com/go-martini/martini"
 	"net/http"
 	"strings"
@@ -13,8 +14,8 @@ import (
 )
 
 type DashboardModel struct {
-	Dashboard Dashboard
-	Data      []BackdropResponse
+	Dashboard performanceclient.Dashboard
+	Data      []performanceclient.BackdropResponse
 }
 
 var (
@@ -22,7 +23,7 @@ var (
 )
 
 type DataResponse struct {
-	BackdropResponse *BackdropResponse
+	BackdropResponse *performanceclient.BackdropResponse
 	Error            error
 }
 
@@ -68,7 +69,7 @@ func renderError(w http.ResponseWriter, err error) {
 	renderer.HTML(w, http.StatusInternalServerError, "error", err)
 }
 
-func extractModules(responses <-chan DataResponse) (results []BackdropResponse) {
+func extractModules(responses <-chan DataResponse) (results []performanceclient.BackdropResponse) {
 	for r := range responses {
 		if r.Error == nil {
 			results = append(results, *r.BackdropResponse)
@@ -78,9 +79,9 @@ func extractModules(responses <-chan DataResponse) (results []BackdropResponse) 
 	return
 }
 
-func fetchModules(dashboard Dashboard, log *logrus.Logger) chan DataResponse {
+func fetchModules(dashboard performanceclient.Dashboard, log *logrus.Logger) chan DataResponse {
 	out := make(chan DataResponse)
-	fetchDataSource := func(dataSource DataSource) DataResponse {
+	fetchDataSource := func(dataSource performanceclient.DataSource) DataResponse {
 		start := time.Now()
 		queryParams := dataSource.QueryParams
 		br, err := DataAPIClient.Fetch(dataSource.DataGroup, dataSource.DataType, queryParams)
