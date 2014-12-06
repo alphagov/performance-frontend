@@ -5,8 +5,9 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/alphagov/performanceplatform-client.go"
 	"github.com/go-martini/martini"
-	// "github.com/golang/groupcache/singleflight"
+	"github.com/jabley/mustache"
 	"net/http"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -19,9 +20,28 @@ type DashboardModel struct {
 	Data      []performanceclient.BackdropResponse
 }
 
+const (
+	// ContentType header constant.
+	ContentType = "Content-Type"
+	// ContentLength header constant.
+	ContentLength = "Content-Length"
+	// ContentBinary header value for binary data.
+	ContentBinary = "application/octet-stream"
+	// ContentJSON header value for JSON data.
+	ContentJSON = "application/json"
+	// ContentHTML header value for HTML data.
+	ContentHTML = "text/html"
+	// ContentXHTML header value for XHTML data.
+	ContentXHTML = "application/xhtml+xml"
+	// ContentXML header value for XML data.
+	ContentXML = "text/xml"
+	// Default character encoding.
+	defaultCharset = "UTF-8"
+)
+
 var (
 	renderer  = render.New(render.Options{})
-	requests  = requestMux(workerPool(5))
+	requests  = requestMux(workerPool(10))
 	emptyTime time.Time
 )
 
@@ -44,6 +64,24 @@ type Request struct {
 type DataResponse struct {
 	BackdropResponse *performanceclient.BackdropResponse
 	Error            error
+}
+
+// ByServiceTitle implements the sort.Interface for []Dashboard based on the Title field
+type ByServiceTitle []performanceclient.Dashboard
+
+func (a ByServiceTitle) Len() int           { return len(a) }
+func (a ByServiceTitle) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a ByServiceTitle) Less(i, j int) bool { return a[i].Title < a[j].Title }
+
+// FilterDashboards is used to filter dashboards
+func FilterDashboards(s []performanceclient.Dashboard, fn func(performanceclient.Dashboard) bool) []performanceclient.Dashboard {
+	var p []performanceclient.Dashboard // == nil
+	for _, v := range s {
+		if fn(v) {
+			p = append(p, v)
+		}
+	}
+	return p
 }
 
 func workerPool(n int) (chan *ReadAPIJob, chan *ReadAPIJob) {
@@ -101,11 +139,15 @@ func requestMux(jobs chan *ReadAPIJob, results chan *ReadAPIJob) chan *Request {
 	return requests
 }
 
-func NewHandler(logger *logrus.Logger) http.Handler {
+func NewHandler(logger *logrus.Logger, assetsHandler http.HandlerFunc) http.Handler {
 	m := martini.Classic()
 	m.Map(logger)
+	m.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/performance", http.StatusMovedPermanently)
+	})
 	m.Get("/performance", HomepageHandler)
 	m.Get("/performance/**", ProcessRequestHandler)
+	m.Get("/assets**", assetsHandler)
 	return m
 }
 
@@ -118,7 +160,32 @@ func HomepageHandler(w http.ResponseWriter, r *http.Request, log *logrus.Logger)
 		return
 	}
 
-	renderer.HTML(w, http.StatusOK, "home", dashboards)
+	items := dashboards.Items
+	sort.Sort(ByServiceTitle(items))
+
+	contentDashboards := FilterDashboards(items, func(d performanceclient.Dashboard) bool {
+		return d.DashboardType == "content" && d.Slug != "site-activity"
+	})
+
+	services := FilterDashboards(items, func(d performanceclient.Dashboard) bool {
+		return d.DashboardType == "transaction" || d.DashboardType == "other"
+	})
+
+	serviceGroups := FilterDashboards(items, func(d performanceclient.Dashboard) bool {
+		return d.DashboardType == "service-group"
+	})
+
+	highVolumeServices := FilterDashboards(items, func(d performanceclient.Dashboard) bool {
+		return d.DashboardType == "high-volume-transaction"
+	})
+
+	w.Header().Set(ContentType, "text/html")
+	w.WriteHeader(http.StatusOK)
+
+	w.Write([]byte(mustache.RenderFileInLayout(
+		"templates/home.html",
+		"assets/govuk_frontend/views/layouts/govuk_template.html",
+		homePage(services, serviceGroups, highVolumeServices, contentDashboards))))
 }
 
 func ProcessRequestHandler(w http.ResponseWriter, r *http.Request, log *logrus.Logger) {
@@ -136,7 +203,13 @@ func ProcessRequestHandler(w http.ResponseWriter, r *http.Request, log *logrus.L
 
 	modules := extractModules(responses)
 
-	renderer.HTML(w, http.StatusOK, "dashboard", DashboardModel{dashboard, modules})
+	w.Header().Set(ContentType, "text/html")
+	w.WriteHeader(http.StatusOK)
+
+	w.Write([]byte(mustache.RenderFileInLayout(
+		"templates/dashboard.html",
+		"assets/govuk_frontend/views/layouts/govuk_template.html",
+		dashboardPage(dashboard, modules))))
 }
 
 func renderError(w http.ResponseWriter, err error) {

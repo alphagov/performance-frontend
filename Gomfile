@@ -6,6 +6,8 @@ gom 'github.com/codegangsta/inject'
 gom 'github.com/go-martini/martini'
 gom 'github.com/golang/groupcache'
 gom 'github.com/google/go-querystring/query'
+gom 'github.com/jabley/mustache'
+gom 'github.com/shaoshing/train'
 gom 'gopkg.in/unrolled/render.v1'
 
 group :test do

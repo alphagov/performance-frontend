@@ -4,6 +4,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/alext/tablecloth"
 	"github.com/alphagov/performanceplatform-client.go"
+	"github.com/shaoshing/train"
 	"net/http"
 	"os"
 	"runtime"
@@ -26,27 +27,23 @@ func main() {
 	}
 
 	var (
-		port = getEnvDefault("HTTP_PORT", "8080")
-		// databaseName = getEnvDefault("DBNAME", "backdrop")
-		// mongoURL     = getEnvDefault("MONGO_URL", "localhost")
-		// bearerToken  = getEnvDefault("BEARER_TOKEN", "EMPTY")
+		port         = getEnvDefault("HTTP_PORT", "8080")
 		configAPIURL = getEnvDefault("CONFIG_API_URL", "https://stagecraft.preview.performance.service.gov.uk/public/dashboards")
 		dataAPIURL   = getEnvDefault("DATA_API_URL", "https://www.preview.performance.service.gov.uk")
-		// maxGzipBody  = getEnvDefault("MAX_GZIP_SIZE", "10000000")
-		logLevel = getEnvDefault("LOG_LEVEL", "info")
-		logger   = newLog(logLevel)
+		logLevel     = getEnvDefault("LOG_LEVEL", "info")
+		logger       = newLog(logLevel)
 	)
 
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 
-	// handlers.ConfigAPIClient = config.NewClient(configAPIURL, bearerToken)
-	// handlers.DataSetStorage = handlers.NewMongoStorage(mongoURL, databaseName)
-	// handlers.StatsdClient = handlers.NewStatsDClient("localhost:8125", "datastore.")
 	ConfigAPIClient = performanceclient.NewMetaClient(configAPIURL, logger)
 	DataAPIClient = performanceclient.NewDataClient(dataAPIURL, logger)
 
-	go serve(":"+port, NewHandler(logger), wg, logger)
+	train.ConfigureHttpHandler(nil)
+	train.Config.Verbose = true
+
+	go serve(":"+port, NewHandler(logger, train.ServeRequest), wg, logger)
 	wg.Wait()
 }
 

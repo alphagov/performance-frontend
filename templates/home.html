@@ -1,0 +1,89 @@
+<main>
+  <header>
+    <section>
+      <h1>Our performance</h1>
+      <p class="lead">
+        Our statistics show you how government services are doing, like how much they cost to run and how many people use them.
+      </p>
+      <p class="lead">
+        We show the latest information about a service as soon as it becomes available. This lets you see how particular services are doing right now.
+      </p>
+    </section>
+
+    <aside>
+      <h2>Get a dashboard</h2>
+      <p>If you work on a government service, we can help you create a dashboard. Find out how your service is performing and how it can be improved.</p>
+      <p>Email <a href="mailto:performance@digital.cabinet-office.gov.uk">performance@digital.cabinet-office.gov.uk</a></p>
+    </aside>
+  </header>
+  <section id="service-dashboards">
+    <h2>Service dashboards</h2>
+      <div class='service-listing'> 
+        <h3>Detailed dashboards</h3>
+        <p class='count'> {{ this.state.services.length + this.state.serviceGroups.length }}
+        <div>
+        <p>Services providing regularly updated, detailed data to GOV.UK</p>
+        <div class="service-listing">
+          <ul>
+          {{#firstServices}}
+            <li><a href='/performance/{{ Slug }}'>{{ Title }}</a></li>
+          {{/firstServices}}
+          </ul> 
+        </div>
+        <div class="service-listing">
+          <ul>
+          {{#secondServices}}
+            <li><a href='/performance/{{ Slug }}'>{{ Title }}</a></li>
+          {{/secondServices}}
+          </ul>
+          <dl>
+            <dt class="service_groups">Service Groups</dt>
+            <dl>
+              <ol>
+              {{#serviceGroups}}
+                <li><a href='/performance/{{ Slug }}'>{{ Title }}</li>
+              {{/serviceGroups}}
+              </ol>
+            </dl>
+          </dl>
+        </div>
+  </section>
+  <section id="overview-dashboards">
+    <div class='service-listing'> 
+      <h3>Overview dashboards</h3>
+      <p class='count'> {{ highVolumeServices.length }}
+    </div>
+    <div>
+      <p>Services providing quarterly data to GOV.UK</p>
+      <p><a href="/performance/services"><strong>See all services</strong></a></p>
+    </div>
+  </section>
+  <section id="activity-dashboards">
+    <h2>GOV.UK activity dashboards</h2>
+    <div class='cols3 service-listing'>
+      <h3>Activity dashboards</h3>
+      <p class='count'>{{ this.state.contentDashboards.length + 1 }}
+      <div class='cols3 add3'>
+        <p>Web traffic on our site, including a look at how our content is being used.</p>
+        <p>
+          <a href='/performance/site-activity'><strong>GOV.UK site activity overview</strong></a>
+        </p>
+        <h3 class='underline'>Department activity dashboards</h3>
+        <div class="service-listing">
+          <ul>
+          {{#firstContent}}
+            <li><a href='/performance/{{ Slug }}'>{{ Title }}</a></li>
+          {{/firstContent}}
+          </ul> 
+        </div>
+        <div class="service-listing">
+          <ul>
+          {{#secondContent}}
+            <li><a href='/performance/{{ Slug }}'>{{ Title }}</a></li>
+          {{/secondContent}}
+          </ul> 
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
