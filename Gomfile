@@ -4,6 +4,7 @@ gom 'github.com/alext/tablecloth'
 gom 'github.com/cenkalti/backoff'
 gom 'github.com/codegangsta/inject'
 gom 'github.com/go-martini/martini'
+gom 'github.com/golang/groupcache'
 gom 'github.com/google/go-querystring/query'
 gom 'gopkg.in/unrolled/render.v1'
 

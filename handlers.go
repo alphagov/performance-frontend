@@ -5,10 +5,11 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/alphagov/performanceplatform-client.go"
 	"github.com/go-martini/martini"
+	// "github.com/golang/groupcache/singleflight"
 	"net/http"
 	"strings"
 	"sync"
-	"time"
+	// "time"
 
 	"gopkg.in/unrolled/render.v1"
 )
@@ -20,11 +21,83 @@ type DashboardModel struct {
 
 var (
 	renderer = render.New(render.Options{})
+	requests = requestMux(workerPool(5))
 )
 
+// ReadAPIJob represents a request to the Read API, plus the response
+type ReadAPIJob struct {
+	// DataSource is the DataSource being queried in the Read API.
+	// Responses should be reasonably idempotent and thus we can avoid
+	// doing unnecessary work if another request is already in flight.
+	DataSource performanceclient.DataSource
+	// DataResponse is the response from calling the Read API
+	DataResponse *DataResponse
+}
+
+type Request struct {
+	Job        *ReadAPIJob // changed
+	ResultChan chan DataResponse
+}
+
+// DataResponse is the response from calling the Read API
 type DataResponse struct {
 	BackdropResponse *performanceclient.BackdropResponse
 	Error            error
+}
+
+func workerPool(n int) (chan *ReadAPIJob, chan *ReadAPIJob) {
+	jobs := make(chan *ReadAPIJob)
+	results := make(chan *ReadAPIJob)
+
+	for i := 0; i < n; i++ {
+		go worker(jobs, results)
+	}
+
+	return jobs, results
+}
+
+func worker(jobs chan *ReadAPIJob, results chan *ReadAPIJob) {
+	for job := range jobs {
+		dataResponse := fetchDataSource(job.DataSource)
+		job.DataResponse = &dataResponse
+		results <- job
+	}
+}
+
+func requestMux(jobs chan *ReadAPIJob, results chan *ReadAPIJob) chan *Request {
+	requests := make(chan *Request)
+
+	go func() {
+		queues := make(map[string][]*Request)
+
+		for {
+			select {
+			case request := <-requests:
+				job := request.Job
+				dataSource := job.DataSource
+				URL := DataAPIClient.BuildURL(dataSource.DataGroup, dataSource.DataType, dataSource.QueryParams)
+				queues[URL] = append(queues[URL], request)
+
+				if len(queues[URL]) == 1 {
+					go func() {
+						jobs <- job
+					}()
+				}
+
+			case job := <-results:
+				dataSource := job.DataSource
+				URL := DataAPIClient.BuildURL(dataSource.DataGroup, dataSource.DataType, dataSource.QueryParams)
+
+				for _, request := range queues[URL] {
+					request.ResultChan <- *job.DataResponse
+				}
+
+				delete(queues, URL)
+			}
+		}
+	}()
+
+	return requests
 }
 
 func NewHandler(logger *logrus.Logger) http.Handler {
@@ -79,48 +152,45 @@ func extractModules(responses <-chan DataResponse) (results []performanceclient.
 	return
 }
 
-func fetchModules(dashboard performanceclient.Dashboard, log *logrus.Logger) chan DataResponse {
-	out := make(chan DataResponse)
-	fetchDataSource := func(dataSource performanceclient.DataSource) DataResponse {
-		start := time.Now()
-		queryParams := dataSource.QueryParams
-		br, err := DataAPIClient.Fetch(dataSource.DataGroup, dataSource.DataType, queryParams)
-		log.WithFields(logrus.Fields{
-			"url":      DataAPIClient.BuildURL(dataSource.DataGroup, dataSource.DataType, queryParams),
-			"duration": time.Since(start).Seconds(),
-		}).Debug("Got response")
-		return DataResponse{br, err}
+func fetchDataSource(dataSource performanceclient.DataSource) DataResponse {
+	// start := time.Now()
+	queryParams := dataSource.QueryParams
+	br, err := DataAPIClient.Fetch(dataSource.DataGroup, dataSource.DataType, queryParams)
+	// log.WithFields(logrus.Fields{
+	// 	"url":      DataAPIClient.BuildURL(dataSource.DataGroup, dataSource.DataType, queryParams),
+	// 	"duration": time.Since(start).Seconds(),
+	// }).Debug("Got response")
+	return DataResponse{br, err}
+}
+
+func fetchModules(dashboard performanceclient.Dashboard, log *logrus.Logger) (out []ReadAPIJob) {
+	for _, m := range dashboard.Modules {
+		if len(m.Tabs) > 0 {
+			for _, t := range m.Tabs {
+				out = append(out, ReadAPIJob{t.DataSource, nil})
+			}
+		} else {
+			out = append(out, ReadAPIJob{m.DataSource, nil})
+		}
 	}
 
-	go func() {
-		defer close(out)
-		for _, m := range dashboard.Modules {
-			if len(m.Tabs) > 0 {
-				for _, t := range m.Tabs {
-					out <- fetchDataSource(t.DataSource)
-				}
-			} else {
-				out <- fetchDataSource(m.DataSource)
-			}
-		}
-	}()
 	return out
 }
 
-func merge(reports ...chan DataResponse) <-chan DataResponse {
+func merge(jobs []ReadAPIJob) <-chan DataResponse {
 	var wg sync.WaitGroup
 	out := make(chan DataResponse)
 
-	// Start an output goroutine for each input channel in cs.  output
+	// Start an output goroutine for each input channel in reports.  output
 	// copies values from c to out until c is closed, then calls wg.Done.
-	output := func(c <-chan DataResponse) {
-		for n := range c {
-			out <- n
-		}
+	output := func(c ReadAPIJob) {
+		req := Request{&c, make(chan DataResponse)}
+		requests <- &req
+		out <- (<-req.ResultChan)
 		wg.Done()
 	}
-	wg.Add(len(reports))
-	for _, c := range reports {
+	wg.Add(len(jobs))
+	for _, c := range jobs {
 		go output(c)
 	}
 

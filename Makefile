@@ -24,7 +24,7 @@ test:
 	find . -name '*.coverprofile' -type f -exec sed -i '' 's|_'$(CURDIR)'|\.|' {} \;
 
 build:
-	GO_ENABLED=0 GOOS=$(GOOS) gom build -a -tags netgo -ldflags '-w' -o $(BINARY) .
+	GO_ENABLED=0 GOOS=$(GOOS) gom build -race -a -tags netgo -ldflags '-w' -o $(BINARY) .
 
 clean:
 	rm -rf $(BINARY)
