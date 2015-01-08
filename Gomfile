@@ -1,5 +1,5 @@
 gom 'github.com/Sirupsen/logrus'
-gom 'github.com/alphagov/performanceplatform-client.go'
+gom 'github.com/alphagov/performanceplatform-client.go', :commit => 'e89f8757f3f0fab0e2f5fdb7efbcc6f8f2ddfb9e'
 gom 'github.com/alext/tablecloth'
 gom 'github.com/cenkalti/backoff'
 gom 'github.com/codegangsta/inject'
