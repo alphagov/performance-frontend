@@ -1,7 +1,7 @@
 package main
 
 import (
-	// "fmt"
+	"fmt"
 	"github.com/Sirupsen/logrus"
 	"github.com/alphagov/performanceplatform-client.go"
 	"github.com/go-martini/martini"
@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
-	// "time"
+	"time"
 
 	"gopkg.in/unrolled/render.v1"
 )
@@ -20,8 +20,9 @@ type DashboardModel struct {
 }
 
 var (
-	renderer = render.New(render.Options{})
-	requests = requestMux(workerPool(5))
+	renderer  = render.New(render.Options{})
+	requests  = requestMux(workerPool(5))
+	emptyTime time.Time
 )
 
 // ReadAPIJob represents a request to the Read API, plus the response
@@ -146,6 +147,8 @@ func extractModules(responses <-chan DataResponse) (results []performanceclient.
 	for r := range responses {
 		if r.Error == nil {
 			results = append(results, *r.BackdropResponse)
+		} else {
+			fmt.Println(r.Error.Error())
 		}
 	}
 
@@ -167,10 +170,10 @@ func fetchModules(dashboard performanceclient.Dashboard, log *logrus.Logger) (ou
 	for _, m := range dashboard.Modules {
 		if len(m.Tabs) > 0 {
 			for _, t := range m.Tabs {
-				out = append(out, ReadAPIJob{t.DataSource, nil})
+				out = append(out, newReadAPIJob(t.DataSource))
 			}
 		} else {
-			out = append(out, ReadAPIJob{m.DataSource, nil})
+			out = append(out, newReadAPIJob(m.DataSource))
 		}
 	}
 
@@ -201,4 +204,40 @@ func merge(jobs []ReadAPIJob) <-chan DataResponse {
 		close(out)
 	}()
 	return out
+}
+
+func newReadAPIJob(dataSource performanceclient.DataSource) ReadAPIJob {
+	// Use a pointer so that we can update the QueryParams
+	queryParams := &dataSource.QueryParams
+
+	if queryParams.StartAt != emptyTime && queryParams.EndAt == emptyTime &&
+		queryParams.Duration == 0 {
+		queryParams.EndAt = time.Now()
+	} else if queryParams.StartAt != emptyTime && queryParams.EndAt != emptyTime &&
+		queryParams.Duration != 0 {
+		queryParams.Duration = 0
+	} else if len(queryParams.Period) > 0 &&
+		queryParams.Duration == 0 &&
+		queryParams.StartAt == emptyTime && queryParams.EndAt == emptyTime {
+		queryParams.Duration = periodToDuration(queryParams.Period)
+	}
+
+	return ReadAPIJob{dataSource, nil}
+}
+
+func periodToDuration(period string) int {
+	switch period {
+	case "hour":
+		return 24
+	case "day":
+		return 30
+	case "week":
+		return 9
+	case "month":
+		return 12
+	case "quarter":
+		return 24
+	default:
+		panic(fmt.Sprintf("Unknown period: %q", period))
+	}
 }
