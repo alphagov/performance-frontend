@@ -1,0 +1,29 @@
+<div id="wrapper">
+  <main role="main">
+    <header>
+      <main>
+        <h1><span class='strapline'>Dashboard</span>{{ dashboard.Title }}</h1>
+        <p class='tagline'>This dashboard shows information how how the <strong>{{ dashboard.Title }}</strong> is currently performing</p>
+      </main>
+      <aside>
+
+      </aside>
+    </header>
+    <section>
+    </section>
+    <footer>
+      <div class='row'>
+        <p class='description'>{{ dashboard.Description }}</p>
+      </div>
+      <div class='row'>
+        <div class='footer-left'>
+          <aside class='related-pages' role='complementary'>
+            DashboardRelatedTransactionComponent({dashboard: this.state.dashboard})
+          </aside>
+        </div>
+        <div class='footer-right'>
+        </div>
+      </div>
+    </footer>
+  </main>
+</div>

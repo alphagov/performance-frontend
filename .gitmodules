@@ -1,0 +1,3 @@
+[submodule "govuk_frontend_mustache"]
+	path = assets/govuk_frontend
+	url = https://github.com/alphagov/govuk_template_mustache.git
