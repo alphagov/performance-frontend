@@ -11,7 +11,8 @@ all: deps _vendor fmt test build
 deps:
 	go get github.com/mattn/gom
 	go get github.com/onsi/ginkgo/ginkgo
-	go get golang.org/x/tools/cmd/cover
+	-go get golang.org/x/tools/cmd/cover
+	-go get code.google.com/p/go.tools/cmd/cover
 
 fmt:
 	gofmt -w=1 *.go
