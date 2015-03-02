@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/Sirupsen/logrus"
+	_ "github.com/SlyMarbo/spdy" // This adds SPDY client support to net/http
 	"github.com/alext/tablecloth"
 	"github.com/alphagov/performanceplatform-client.go"
 	"net/http"
